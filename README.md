@@ -1,4 +1,4 @@
 bamboo-workshop
 ===============
 
-A collection for rendering polygonal meshes into real physical structures
+A collection of tools for rendering polygonal meshes into real physical structures
