@@ -7,6 +7,7 @@ import maya.standalone
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 
+# Maya Edge model class, that will be converted into a rod.
 class Edge:
 
     def __init__(self, id, startVertexId, endVertexId, length):
@@ -16,18 +17,43 @@ class Edge:
         self.connectedVertices = [self.startVertexId, self.endVertexId]
         self.length = length
 
+# Maya Vertex model class, that will be converted into a Joint.
 class Vertex:
 
-    def __init__(self, id, position, connectedEdges):
+    def __init__(self, id, position, normal, connectedEdges):
         self.id = id
         self.position = position
+        self.normal = normal
         self.connectedEdges = connectedEdges
+
+# A Vertex-based class with detailed plug information.
+class Joint:
+
+    def __init__(self, id):
+        # the corresponding vertex that this joint was constructed from.
+        self.vertexId = id
+        self.plugs = []
+
+    def addPlug(self, plug):
+        self.plugs.append(plug)
+
+# A Plug represents a single socket on a Joint. It can accomodate an edge.
+class Plug:
+
+    shapeMap = ['circle', 'triangle', 'square', 'pentagon', 'hexagon']
+
+    def __init__(self, shapeId, rotation):
+        # the unique shape that identifies the plug.
+        self.shape = self.shapeMap[shapeId]
+        # the angle of rotation from the original vertex's normal.
+        self.rotation = rotation
 
 class Exporter:
 
     def __init__(self):
         self.edges = []
-        self.vertices =[]
+        self.vertices = []
+        self.joints = []
 
     # Find a Vertex instance from its id.
     def findVertex(self, id):
@@ -42,11 +68,11 @@ class Exporter:
         connections = []
         for edgeId in self.findVertex(vertexId).connectedEdges:
             edge = self.findEdge(edgeId)
-            vertexId = [vertex for vertex in edge.connectedVertices if not vertexId == vertex].pop()
-            connections.append((edgeId,vertexId))
+            oppositeVertexId = [vertex for vertex in edge.connectedVertices if not vertexId == vertex].pop()
+            connections.append((edgeId, oppositeVertexId))
         return connections
 
-
+    # Create all the Vertex objects from the dag path shape.
     def extractVertices(self, dagPath):
         print("\n ---- Vertex Information ---- \n")
 
@@ -57,26 +83,29 @@ class Exporter:
             vertexId = vertexIterator.index()
             position = vertexIterator.position(OpenMaya.MSpace.kObject)
 
+            normal = OpenMaya.MVector()
+            vertexIterator.getNormal(normal, OpenMaya.MSpace.kObject)
+
             edgeList = OpenMaya.MIntArray()
             vertexIterator.getConnectedEdges(edgeList)
             connectedEdges = [edgeList[i] for i in range(edgeList.length())]
-            newVertex = Vertex(vertexId, position, connectedEdges)
+            newVertex = Vertex(vertexId, position, normal, connectedEdges)
             self.vertices.append(newVertex)
 
             vertexIterator.next()
 
         for vertex in self.vertices:
-            print("vertex {0} has position({1},{2},{3}) and is connected to edges: {4}".format(
+            print("vertex {0} has position({1},{2},{3}), normal ({5},{6},{7}) and is connected to edges: {4}".format(
                 vertex.id,
                 vertex.position.x,
                 vertex.position.y,
                 vertex.position.z,
-                ', '.join(map(str, vertex.connectedEdges))))
+                ', '.join(map(str, vertex.connectedEdges)),
+                vertex.normal.x,
+                vertex.normal.y,
+                vertex.normal.z))
 
-            # For each vertex, find the angle of the connected edge. Use the position of the connected vertex.
-            for connections in self.findConnectedVertices(vertex.id):
-                print("   - found edge {0} connected to vertex: {1}".format(connections[0], connections[1]))
-
+    # Create all the Edge objects from the dag path shape.
     def extractEdges(self, dagPath):
         print("\n ---- Edge Information ---- \n")
 
@@ -103,6 +132,52 @@ class Exporter:
                 edge.endVertexId,
                 edge.length))
 
+    def constructJoints(self):
+
+        for vertex in self.vertices:
+            # Create the Joint object.
+            joint = Joint(vertex.id)
+            normal = vertex.normal
+            position = OpenMaya.MVector(vertex.position)
+
+            # For each vertex, find the angle of the connected edge. Use the position of the connected vertex.
+            connectedVertices = self.findConnectedVertices(vertex.id)
+            for i in range(len(connectedVertices)):
+                connection = connectedVertices[i]
+
+                oppositeVertex = self.findVertex(connection[1])
+                oppositeVertexPosition = OpenMaya.MVector(oppositeVertex.position)
+
+                directionOfEdge = oppositeVertexPosition - position
+                rotationNormalToEdge = OpenMaya.MQuaternion(normal, directionOfEdge)
+
+                plug = Plug(i, rotationNormalToEdge)
+
+                print("   - Plug for vertex {0}, plug {1}".format(vertex.id, plug.shape))
+                print("   -    found edge {0} connected vertex {2} to vertex: {1}".format(connection[0], connection[1], vertex.id))
+                print("   -    and the direction of the edge is ({0},{1},{2})".format(
+                    directionOfEdge.x,
+                    directionOfEdge.y,
+                    directionOfEdge.z))
+
+                # returns [object name, node name]
+                result = cmds.polyCube()
+                objectName = 'vertex_{0}_plug_{1}'.format(vertex.id, plug.shape)
+                cmds.rename(result[0], objectName)
+                dagPath = self.getDagPathFromPath(objectName)
+                mfnTransform = OpenMaya.MFnTransform(dagPath)
+                mfnTransform.setRotation(rotationNormalToEdge)
+
+                joint.addPlug(plug)
+
+            self.joints.append(joint)
+
+    def getDagPathFromPath(self, path):
+        selectionList = OpenMaya.MSelectionList()
+        selectionList.add(path)
+        dagPath = OpenMaya.MDagPath()
+        selectionList.getDagPath(0, dagPath)
+        return dagPath
 
     def export(self):
         # Traverse the scene.
@@ -125,7 +200,11 @@ class Exporter:
 
                 self.extractVertices(dagPath)
 
+                break
+
             dagIterator.next()
+
+        self.constructJoints()
 
 def main(argv):
 
@@ -139,5 +218,8 @@ def main(argv):
 
     exporter = Exporter()
     exporter.export()
+
+    cmds.file(rename="/Users/noin/Desktop/output.ma")
+    cmds.file(save=True, type="mayaAscii")
 
 main(sys.argv)
