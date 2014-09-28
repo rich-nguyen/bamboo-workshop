@@ -29,6 +29,8 @@ class Vertex:
 # A Vertex-based class with detailed plug information.
 class Joint:
 
+    alphabet = ['a', 'b', 'c', 'd']
+
     def __init__(self, id):
         # the corresponding vertex that this joint was constructed from.
         self.vertexId = id
@@ -36,6 +38,9 @@ class Joint:
 
     def addPlug(self, plug):
         self.plugs.append(plug)
+
+    def name(self):
+        return self.alphabet[self.vertexId]
 
 # A Plug represents a single socket on a Joint. It can accomodate an edge.
 class Plug:
@@ -45,10 +50,13 @@ class Plug:
     def __init__(self, shapeId, rotation):
         # the unique shape that identifies the plug.
         self.shape = self.shapeMap[shapeId]
-        # the angle of rotation from the original vertex's normal.
+        # the angle of rotation is the transformation from the yAxis to the angle of the edge.
         self.rotation = rotation
 
 class Exporter:
+
+    # This needs to be incremented if a new version of the template is made.
+    version = 'v1'
 
     def __init__(self):
         self.edges = []
@@ -132,6 +140,7 @@ class Exporter:
                 edge.endVertexId,
                 edge.length))
 
+    # Calculate rotations from the Vertex connections, and create a Joint with Plugs.
     def constructJoints(self):
 
         for vertex in self.vertices:
@@ -150,8 +159,10 @@ class Exporter:
 
                 directionOfEdge = oppositeVertexPosition - position
                 rotationNormalToEdge = OpenMaya.MQuaternion(normal, directionOfEdge)
+                rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, normal)
+                rotationNormalToYaxis = rotationYaxisToNormal.inverse()
 
-                plug = Plug(i, rotationNormalToEdge)
+                plug = Plug(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
 
                 print("   - Plug for vertex {0}, plug {1}".format(vertex.id, plug.shape))
                 print("   -    found edge {0} connected vertex {2} to vertex: {1}".format(connection[0], connection[1], vertex.id))
@@ -160,24 +171,61 @@ class Exporter:
                     directionOfEdge.y,
                     directionOfEdge.z))
 
-                # returns [object name, node name]
-                result = cmds.polyCube()
-                objectName = 'vertex_{0}_plug_{1}'.format(vertex.id, plug.shape)
-                cmds.rename(result[0], objectName)
-                dagPath = self.getDagPathFromPath(objectName)
-                mfnTransform = OpenMaya.MFnTransform(dagPath)
-                mfnTransform.setRotation(rotationNormalToEdge)
-
                 joint.addPlug(plug)
 
             self.joints.append(joint)
 
+    # Takes a string path and returns an equivalent MDagPath.
     def getDagPathFromPath(self, path):
         selectionList = OpenMaya.MSelectionList()
         selectionList.add(path)
         dagPath = OpenMaya.MDagPath()
         selectionList.getDagPath(0, dagPath)
         return dagPath
+
+    # Takes a string template object name (eg. joint) and returns the object name.
+    def getTemplateObjectName(self, objectName):
+        return "template_{0}_:{1}".format(self.version, objectName)
+
+    # Add a joint into the scene.
+    def insertJoints(self):
+
+        # copy joint object
+        # copy plug object
+        # run mesh difference
+        # delete the layers
+        # delete the groups
+        # rename the cutout.
+        # debug: position and rename the cutout.
+
+        for joint in self.joints:
+            print('adding joint {0}, {1}'.format(joint.vertexId, joint.name()))
+
+            # Copy joint object from the template object.
+            newJoint = cmds.duplicate(self.getTemplateObjectName("joint"))[0]
+
+            for plug in joint.plugs:
+
+                print('    adding plug {0} with rotation {1},{2},{3},{4}'.format(
+                    plug.shape, plug.rotation.x,
+                    plug.rotation.y,
+                    plug.rotation.z,
+                    plug.rotation.w))
+
+                # Copy plug object from the template object, and rotate it.
+                newPlug = cmds.duplicate(self.getTemplateObjectName("square"))[0]
+                plugDagPath = self.getDagPathFromPath(newPlug)
+                mfnTransform = OpenMaya.MFnTransform(plugDagPath)
+                mfnTransform.setRotation(plug.rotation)
+
+                # Mesh boolean combine, with 'difference' operator.
+                boolOp = cmds.polyBoolOp(newJoint, newPlug, op=2)
+
+                # Update the joint copy name and remove history.
+                newJoint = boolOp[0]
+                cmds.delete(newJoint, constructionHistory=True)
+
+            cmds.rename(newJoint, "joint_{0}_{1}".format(joint.name(), joint.vertexId))
 
     def export(self):
         # Traverse the scene.
@@ -205,6 +253,7 @@ class Exporter:
             dagIterator.next()
 
         self.constructJoints()
+        self.insertJoints()
 
 def main(argv):
 
