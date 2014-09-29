@@ -29,7 +29,8 @@ class Vertex:
 # A Vertex-based class with detailed plug information.
 class Joint:
 
-    alphabet = ['a', 'b', 'c', 'd']
+    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
     def __init__(self, id):
         # the corresponding vertex that this joint was constructed from.
@@ -158,13 +159,14 @@ class Exporter:
                 oppositeVertexPosition = OpenMaya.MVector(oppositeVertex.position)
 
                 directionOfEdge = oppositeVertexPosition - position
+                directionOfEdge.normalize()
                 rotationNormalToEdge = OpenMaya.MQuaternion(normal, directionOfEdge)
                 rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, normal)
                 rotationNormalToYaxis = rotationYaxisToNormal.inverse()
 
                 plug = Plug(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
 
-                print("   - Plug for vertex {0}, plug {1}".format(vertex.id, plug.shape))
+                print("   - Plug for vertex {0}, shape {1}".format(vertex.id, plug.shape))
                 print("   -    found edge {0} connected vertex {2} to vertex: {1}".format(connection[0], connection[1], vertex.id))
                 print("   -    and the direction of the edge is ({0},{1},{2})".format(
                     directionOfEdge.x,
