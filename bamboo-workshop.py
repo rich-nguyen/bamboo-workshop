@@ -26,6 +26,9 @@ class Vertex:
         self.normal = normal
         self.connectedEdges = connectedEdges
 
+    def negatedNormal(self):
+        return -self.normal
+
 # A Vertex-based class with detailed plug information.
 class Joint:
 
@@ -147,7 +150,7 @@ class Exporter:
         for vertex in self.vertices:
             # Create the Joint object.
             joint = Joint(vertex.id)
-            normal = vertex.normal
+            negatedNormal = vertex.negatedNormal()
             position = OpenMaya.MVector(vertex.position)
 
             # For each vertex, find the angle of the connected edge. Use the position of the connected vertex.
@@ -160,8 +163,8 @@ class Exporter:
 
                 directionOfEdge = oppositeVertexPosition - position
                 directionOfEdge.normalize()
-                rotationNormalToEdge = OpenMaya.MQuaternion(normal, directionOfEdge)
-                rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, normal)
+                rotationNormalToEdge = OpenMaya.MQuaternion(negatedNormal, directionOfEdge)
+                rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, negatedNormal)
                 rotationNormalToYaxis = rotationYaxisToNormal.inverse()
 
                 plug = Plug(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
