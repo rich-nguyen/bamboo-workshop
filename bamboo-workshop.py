@@ -89,10 +89,10 @@ class Exporter:
         while not vertexIterator.isDone():
 
             vertexId = vertexIterator.index()
-            position = vertexIterator.position(OpenMaya.MSpace.kObject)
+            position = vertexIterator.position(OpenMaya.MSpace.kWorld)
 
             normal = OpenMaya.MVector()
-            vertexIterator.getNormal(normal, OpenMaya.MSpace.kObject)
+            vertexIterator.getNormal(normal, OpenMaya.MSpace.kWorld)
 
             edgeList = OpenMaya.MIntArray()
             vertexIterator.getConnectedEdges(edgeList)
@@ -122,7 +122,7 @@ class Exporter:
         while not edgeIterator.isDone():
 
             lengthPtr = OpenMaya.MScriptUtil().asDoublePtr()
-            edgeIterator.getLength(lengthPtr, OpenMaya.MSpace.kObject)
+            edgeIterator.getLength(lengthPtr, OpenMaya.MSpace.kWorld)
             length = OpenMaya.MScriptUtil.getDouble(lengthPtr)
             startVertexId = edgeIterator.index(0)
             endVertexId = edgeIterator.index(1)
@@ -196,27 +196,22 @@ class Exporter:
         # delete the layers
         # delete the groups
         # rename the cutout.
-        # debug: position and rename the cutout.
 
         for joint in self.joints:
-            print('adding joint {0}, {1}'.format(joint.vertexId, joint.name()))
+            print('adding joint {0} (letter {1})'.format(joint.vertexId, joint.name()))
 
             # Copy joint object from the template object.
             newJoint = cmds.duplicate(self.getTemplateObjectName("joint"))[0]
 
             for plug in joint.plugs:
 
-                print('    adding plug {0} with rotation {1},{2},{3},{4}'.format(
-                    plug.shape, plug.rotation.x,
-                    plug.rotation.y,
-                    plug.rotation.z,
-                    plug.rotation.w))
-
                 # Copy plug object from the template object, and rotate it.
                 newPlug = cmds.duplicate(self.getTemplateObjectName("square"))[0]
                 plugDagPath = self.getDagPathFromPath(newPlug)
                 mfnTransform = OpenMaya.MFnTransform(plugDagPath)
-                mfnTransform.setRotation(plug.rotation)
+
+                #mfnTransform.setRotateOrientation(plug.baseRotation, OpenMaya.MSpace.kTransform, False)
+                mfnTransform.rotateBy(plug.rotation, OpenMaya.MSpace.kTransform)
 
                 # Mesh boolean combine, with 'difference' operator.
                 boolOp = cmds.polyBoolOp(newJoint, newPlug, op=2)
