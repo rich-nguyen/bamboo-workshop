@@ -1,9 +1,5 @@
-# Run this script as mayapy
-# /Applications/Autodesk/maya2015/Maya.app/Contents/bin/mayapy /Users/noin/work/bamboo-workshop/bamboo-workshop.py "/Users/noin/Dropbox/Share/Bamboo Workshop/TestTriangle.ma"
+# Bamboo module for modifying the scene mesh into joints.
 
-import sys
-
-import maya.standalone
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 
@@ -254,21 +250,3 @@ class Exporter:
 
         self.constructJoints()
         self.insertJoints()
-
-def main(argv):
-
-    print("running my script over " + argv[1])
-
-    # Start Maya in batch mode
-    maya.standalone.initialize(name='python')
-
-    # Open the file with the file command
-    cmds.file(argv[1], force=True, open=True)
-
-    exporter = Exporter()
-    exporter.export()
-
-    cmds.file(rename="/Users/noin/Desktop/output.ma")
-    cmds.file(save=True, type="mayaAscii")
-
-main(sys.argv)
