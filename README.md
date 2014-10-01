@@ -21,6 +21,6 @@ Running the Exporter
 
 Things To Do
 ------------
-[x] Basic exporter that creates Joints.
-[ ] Automate the reference part.
-[ ] Create the instructions file which will contain the rod lengths and connections.
+- [x] Basic exporter that creates Joints.
+- [ ] Automate the reference part.
+- [ ] Create the instructions file which will contain the rod lengths and connections.
