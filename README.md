@@ -1,7 +1,7 @@
 bamboo-workshop
 ===============
 
-A collection of tools for rendering polygonal meshes into real physical structures. This repo contains a Maya script that can be executed on a scene containing a Mesh shape. The aim is to turn a Maya mesh into a real-world structure, where edges (in the form of some kind of rod) are connected together to resemble the original mesh.
+A collection of tools for rendering polygonal meshes into real physical structures. This repo contains a Maya script that can be executed on a scene containing a mesh shape. The aim is to turn a Maya mesh into a real-world structure, where edges (in the form of some kind of rod) are connected together to resemble the original mesh.
 
 The mesh shape will be processed into a number of 'Joints'. A Joint represents a mesh vertex. In contrast to a vertex, it is not a point in 3D space, it is a shape volume that has plug-like sockets aligned to the edges that connect to the corresponding vertex. The Joint is oriented along the vertex normal. The rods can be inserted into the plugs. The plug-like sockets have different shapes to make assembly slightly easier.
 
