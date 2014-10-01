@@ -1,6 +1,7 @@
 # Bamboo module for modifying the scene mesh into joints.
 
 import maya.cmds as cmds
+from bamboo.exporter import Exporter
 
 class ExporterUI():
     def __init__(self):
@@ -20,42 +21,48 @@ class ExporterUI():
         )
         # main form for the window
         cmds.rowColumnLayout(
-            numberOfColumns=3,
-            columnWidth=[(1, 100), (2, 60), (3, 60)],
-            columnOffset=[(1, "right", 3)])
+            numberOfColumns=4,
+            columnWidth=[(1, 10), (2, 150), (3, 10), (4, 60)])
 
         # Top Row
         cmds.separator(h=10, style="none")
         cmds.separator(h=10, style="none")
         cmds.separator(h=10, style="none")
-
-        cmds.text(label="Output File:")
-        cmds.textField()
         cmds.separator(h=10, style="none")
 
-        cmds.text(label="Lengths File:")
-        cmds.textField()
+        cmds.separator(h=10, style="none")
+        cmds.checkBox(label="Create instructions file", value=True)
+        cmds.separator(h=10, style="none")
         cmds.separator(h=10, style="none")
 
         # Blank row
-        cmds.separator(h=10, style="none")
-        cmds.separator(h=10, style="none")
-        cmds.separator(h=10, style="none")
+        cmds.separator(h=20, style="none")
+        cmds.separator(h=20, style="none")
+        cmds.separator(h=20, style="none")
+        cmds.separator(h=20, style="none")
 
         cmds.separator(h=10, style="none")
         cmds.button(
             label="Export",
-            command=self.actionBtnCmd
+            command=self.actionBtnCmd  #functools and partial and textfield with query mode to extract params
         )
+        cmds.separator(h=10, style="none")
         cmds.button(
             label="Cancel",
             command=self.cancelBtnCmd
         )
+        # Add import reference nodes thing, menu/button
 
         cmds.showWindow()
 
     def actionBtnCmd(self, *args):
+        multipleFilters = "Maya Files (*.ma *.mb);;Maya ASCII (*.ma);;Maya Binary (*.mb)"
+        outputFile = cmds.fileDialog2(fileFilter=multipleFilters,
+                         fileMode=0,
+                         dialogStyle=2,
+                         caption="Save Output File As")[0]
         cmds.deleteUI(self.window, window=True)
+        Exporter().export(outputFile)
 
     def cancelBtnCmd(self, *args):
         cmds.deleteUI(self.window, window=True)
