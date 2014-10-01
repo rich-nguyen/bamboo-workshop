@@ -3,7 +3,7 @@ bamboo-workshop
 
 A collection of tools for rendering polygonal meshes into real physical structures. This repo contains a Maya script that can be executed on a scene containing a Mesh shape. The aim is to turn a Maya mesh into a real-world structure, where edges (in the form of some kind of rod) are connected together to resemble the original mesh.
 
-The Mesh shape will be processed into a number of 'Joints'. A Joint represents a mesh vertex. In contrast to a vertex, it is not a point in 3D space, it is a shape volume that has plug-like sockets aligned to the edges that connect to the corresponding vertex. The Joint is oriented along the vertex normal. The rods can be inserted into the plugs. The plug-like sockets have different shapes to make assembly slightly easier.
+The mesh shape will be processed into a number of 'Joints'. A Joint represents a mesh vertex. In contrast to a vertex, it is not a point in 3D space, it is a shape volume that has plug-like sockets aligned to the edges that connect to the corresponding vertex. The Joint is oriented along the vertex normal. The rods can be inserted into the plugs. The plug-like sockets have different shapes to make assembly slightly easier.
 
 Requirements
 ------------
@@ -15,12 +15,23 @@ Running the Exporter
 --------------------
 
 1. Open Maya using [mayaenv](./mayaenv.sh). This installs the script path, and installs a menu group in Maya->File called Bamboo Tools.
-2. Create a Mesh in the scene.
+2. Create a mesh in the scene (limitations apply).
 3. Add the templates scene as a reference node using the Maya Reference Editor.
 4. Export the scene by clicking Maya->(Bamboo Tools) Export...
+
+Mesh limitations
+----------------
+ - 25 vertices in the shape. Don't think we can fit anymore on our 3D printer without pagination.
+ - 5 edges per vertex.
+ - no extreme acute angles. The sockets will just merge together.
+ - There must be a region of the vertex that has no edge connections, located near the normal. This is so the Joint can have a readable identifier imprinted.
 
 Things To Do
 ------------
 - [x] Basic exporter that creates Joints.
-- [ ] Automate the reference part.
+- [ ] Submit the first version of the templates reference scene, with lettered joints.
+- [ ] Automate the reference node bit.
 - [ ] Create the instructions file which will contain the rod lengths and connections.
+- [ ] Add a scaling factor.
+- [ ] Add error checking.
+- [ ] Export to stl.
