@@ -11,12 +11,11 @@ def setup():
     mainFileMenu = mel.eval("string $f=$gMainFileMenu")
     mel.eval("buildFileMenu")
     cmds.menuItem(dividerLabel="Bamboo Tools", divider=True)
-    cmds.menuItem(label="Export Bamboo...", parent=mainFileMenu, command="openExporterUI()")
+    cmds.menuItem(label="Export...", parent=mainFileMenu, command="openExporterUI()")
 
 def openExporterUI():
     bamboo.ui.ExporterUI().show()
-    #bamboo.Exporter().export()
 
 def reloadBamboo():
     # reload the file to make sure its up to date
-    exec( 'reload(bamboo)' ) in globals()
+    exec 'reload(bamboo)' in globals()
