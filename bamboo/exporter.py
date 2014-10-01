@@ -2,6 +2,7 @@
 
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
+import os
 
 # Maya Edge model class, that will be converted into a rod.
 class Edge:
@@ -223,7 +224,10 @@ class Exporter:
 
             cmds.rename(newJoint, "joint_{0}_{1}".format(joint.name(), joint.vertexId))
 
-    def export(self):
+    def export(self, outputFile):
+
+        cmds.file(rename=outputFile)
+
         # Traverse the scene.
         dagIterator = OpenMaya.MItDag(OpenMaya.MItDag.kDepthFirst)
 
@@ -250,3 +254,12 @@ class Exporter:
 
         self.constructJoints()
         self.insertJoints()
+
+        fileName, fileExtension = os.path.splitext(outputFile)
+        fileType = ""
+        if fileExtension == ".mb":
+            fileType = "mayaBinary"
+        elif fileExtension == ".ma":
+            fileType = "mayaAscii"
+
+        cmds.file(save=True, type=fileType)
