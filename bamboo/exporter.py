@@ -231,19 +231,15 @@ class Exporter:
 
             self.positionJoint(jointPath, joint.vertexId)
 
-            # Clear the global selection list
-
-            # Also add the joint to the selection list.
-
     def positionJoint(self, jointPath, vertexId):
         # Given the vertex id and the num vertex id, work out the world position of the joint.
 
         xPosition = (vertexId % self.jointGridWidth) * self.jointGridSpacing
-        yPosition = (vertexId // self.jointGridWidth) * self.jointGridSpacing
+        zPosition = (vertexId // self.jointGridWidth) * self.jointGridSpacing
 
-        print("joint {0} will be placed x={1},y={2}".format(vertexId, xPosition, yPosition))
-
-
+        jointDagPath = self.getDagPathFromPath(jointPath)
+        mfnTransform = OpenMaya.MFnTransform(jointDagPath)
+        mfnTransform.setTranslation(OpenMaya.MVector(xPosition, 0.0, zPosition), OpenMaya.MSpace.kTransform)
 
     def export(self, outputFile):
 
