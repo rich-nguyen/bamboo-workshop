@@ -229,6 +229,7 @@ class Exporter:
             jointPath = "joint_{0}_{1}".format(joint.name(), joint.vertexId)
             cmds.rename(newJoint, jointPath)
 
+            # Move the new joint onto the final grid for printing.
             self.positionJoint(jointPath, joint.vertexId)
 
     def positionJoint(self, jointPath, vertexId):
