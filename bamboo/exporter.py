@@ -2,7 +2,9 @@
 
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
+import maya.standalone
 import os
+import sys
 
 # Maya Edge model class, that will be converted into a rod.
 class Edge:
@@ -58,6 +60,8 @@ class Exporter:
 
     # This needs to be incremented if a new version of the template is made.
     version = 'v1'
+    jointGridSpacing = 20.0
+    jointGridWidth = 2
 
     def __init__(self):
         self.edges = []
@@ -212,7 +216,6 @@ class Exporter:
                 plugDagPath = self.getDagPathFromPath(newPlug)
                 mfnTransform = OpenMaya.MFnTransform(plugDagPath)
 
-                #mfnTransform.setRotateOrientation(plug.baseRotation, OpenMaya.MSpace.kTransform, False)
                 mfnTransform.rotateBy(plug.rotation, OpenMaya.MSpace.kTransform)
 
                 # Mesh boolean combine, with 'difference' operator.
@@ -222,7 +225,25 @@ class Exporter:
                 newJoint = boolOp[0]
                 cmds.delete(newJoint, constructionHistory=True)
 
-            cmds.rename(newJoint, "joint_{0}_{1}".format(joint.name(), joint.vertexId))
+
+            jointPath = "joint_{0}_{1}".format(joint.name(), joint.vertexId)
+            cmds.rename(newJoint, jointPath)
+
+            self.positionJoint(jointPath, joint.vertexId)
+
+            # Clear the global selection list
+
+            # Also add the joint to the selection list.
+
+    def positionJoint(self, jointPath, vertexId):
+        # Given the vertex id and the num vertex id, work out the world position of the joint.
+
+        xPosition = (vertexId % self.jointGridWidth) * self.jointGridSpacing
+        yPosition = (vertexId // self.jointGridWidth) * self.jointGridSpacing
+
+        print("joint {0} will be placed x={1},y={2}".format(vertexId, xPosition, yPosition))
+
+
 
     def export(self, outputFile):
 
@@ -263,3 +284,21 @@ class Exporter:
             fileType = "mayaAscii"
 
         cmds.file(save=True, type=fileType)
+
+# Run the exporter in console mode, good for testing.
+# /Applications/Autodesk/maya2015/Maya.app/Contents/bin/mayapy "/Users/noin/work/bamboo-workshop/bamboo/exporter.py" "/Users/noin/Dropbox/Share/Bamboo Workshop/Noins testing Sandbox/TestTriangle.ma" "/Users/noin/Desktop/output.ma"
+def main(argv):
+
+    print("running bamboo exporter in console mode")
+
+    # Start Maya in batch mode
+    maya.standalone.initialize(name='python')
+
+    # Open the file with the file command
+    cmds.file(argv[1], force=True, open=True)
+
+    # Pass the output file.
+    Exporter().export(argv[2])
+
+if __name__ == "__main__":
+    main(sys.argv)
