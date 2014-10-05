@@ -16,6 +16,7 @@ def setup():
 def openExporterUI():
     bamboo.ui.ExporterUI().show()
 
-def reloadBamboo():
+def reload():
+    print ("reloading bamboo exporter")
     # reload the file to make sure its up to date
-    exec 'reload(bamboo)' in globals()
+    exec 'reload(bamboo.exporter)' in globals()

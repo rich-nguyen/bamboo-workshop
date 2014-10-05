@@ -1,7 +1,7 @@
 # Bamboo module for modifying the scene mesh into joints.
 
 import maya.cmds as cmds
-from bamboo.exporter import Exporter
+import bamboo.exporter
 
 class ExporterUI():
     def __init__(self):
@@ -62,7 +62,7 @@ class ExporterUI():
                          dialogStyle=2,
                          caption="Save Output File As")[0]
         cmds.deleteUI(self.window, window=True)
-        Exporter().export(outputFile)
+        bamboo.exporter.Exporter().export(outputFile)
 
     def cancelBtnCmd(self, *args):
         cmds.deleteUI(self.window, window=True)
