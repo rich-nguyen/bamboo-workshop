@@ -60,10 +60,11 @@ class Exporter:
 
     # This needs to be incremented if a new version of the template is made.
     version = 'v1'
-    jointGridSpacing = 20.0
-    jointGridWidth = 2
 
-    def __init__(self):
+    def __init__(self, gridSpacing, gridWidth, createInstructions):
+        self.jointGridSpacing = gridSpacing
+        self.jointGridWidth = gridWidth
+        self.createInstructions = createInstructions
         self.edges = []
         self.vertices = []
         self.joints = []
