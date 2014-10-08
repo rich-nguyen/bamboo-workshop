@@ -296,7 +296,7 @@ def main(argv):
     cmds.file(argv[1], force=True, open=True)
 
     # Pass the output file.
-    Exporter().export(argv[2])
+    Exporter(20, 5, False).export(argv[2])
 
 if __name__ == "__main__":
     main(sys.argv)
