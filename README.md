@@ -38,10 +38,9 @@ Mesh limitations
 Things To Do
 ------------
 - [x] Basic exporter that creates Joints.
-- [ ] Remove alphabet
-- [ ] Submit the first version of the templates reference scene, with lettered joints.
+- [x] Remove alphabet
+- [x] Submit the first version of the templates reference scene, with numbered joints.
 - [ ] Automate the reference node bit.
-- [ ] Create the instructions file which will contain the rod lengths and connections.
-- [ ] Add a scaling factor.
+- [x] Create the instructions file which will contain the rod lengths and connections.
 - [ ] Add error checking.
 - [ ] Export to stl.
