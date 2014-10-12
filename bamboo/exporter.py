@@ -45,6 +45,9 @@ class Dot:
     def findCutout(self, edgeId):
         return [cutout for cutout in self.cutouts if cutout.edgeId == edgeId].pop()
 
+    def sphereTemplateName(self):
+        return "sphere_{0}".format(self.name)
+
 
 # A Cutout represents a single socket on a Dot. It can accomodate a Stick.
 class Cutout:
@@ -186,7 +189,7 @@ class Exporter:
 
         for dot in self.dots:
             # Copy sphere object from the template object.
-            newDot = cmds.duplicate(self.getTemplateObjectName("sphere_000"))[0]
+            newDot = cmds.duplicate(self.getTemplateObjectName(dot.sphereTemplateName()))[0]
 
             for cutout in dot.cutouts:
 
