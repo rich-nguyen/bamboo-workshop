@@ -42,16 +42,23 @@ class Dot:
     def name(self):
         return "%03d" % self.vertexId
 
+    def findCutout(self, edgeId):
+        return [cutout for cutout in self.cutouts if cutout.edgeId == edgeId].pop()
+
+
 # A Cutout represents a single socket on a Dot. It can accomodate a Stick.
 class Cutout:
 
     shapeMap = ['cutoutTriangle', 'cutoutSquare', 'cutoutPentagon', 'cutoutCircle']
+    friendlyName = ['triangle', 'square', 'pentagon', 'circle']
 
-    def __init__(self, shapeId, rotation):
+    def __init__(self, shapeId, rotation, edgeId):
         # the unique shape that identifies the cutout.
         self.shape = self.shapeMap[shapeId]
         # the angle of rotation is the transformation from the yAxis to the angle of the edge.
         self.rotation = rotation
+        self.edgeId = edgeId
+        self.name = self.friendlyName[shapeId]
 
 class Exporter:
 
@@ -74,6 +81,10 @@ class Exporter:
     def findEdge(self, id):
         return [edge for edge in self.edges if edge.id == id].pop()
 
+    # Find a Dot instance from its id.
+    def findDot(self, id):
+        return [dot for dot in self.dots if dot.vertexId == id].pop()
+
     # Find a list of (edgeId, vertexId) pairs which are connected to a specified vertex.
     def findConnectedVertices(self, vertexId):
         connections = []
@@ -85,8 +96,6 @@ class Exporter:
 
     # Create all the Vertex objects from the dag path shape.
     def extractVertices(self, dagPath):
-        print("\n ---- Vertex Information ---- \n")
-
         vertexIterator = OpenMaya.MItMeshVertex(dagPath)
 
         while not vertexIterator.isDone():
@@ -105,20 +114,8 @@ class Exporter:
 
             vertexIterator.next()
 
-        for vertex in self.vertices:
-            print("vertex {0} has position({1},{2},{3}), normal ({5},{6},{7}) and is connected to edges: {4}".format(
-                vertex.id,
-                vertex.position.x,
-                vertex.position.y,
-                vertex.position.z,
-                ', '.join(map(str, vertex.connectedEdges)),
-                vertex.normal.x,
-                vertex.normal.y,
-                vertex.normal.z))
-
     # Create all the Edge objects from the dag path shape.
     def extractEdges(self, dagPath):
-        print("\n ---- Edge Information ---- \n")
 
         edgeIterator = OpenMaya.MItMeshEdge(dagPath)
 
@@ -135,13 +132,6 @@ class Exporter:
             self.edges.append(newEdge)
 
             edgeIterator.next()
-
-        for edge in self.edges:
-            print("edge {0} connects vertex {1} to vertex {2} and has length {3}".format(
-                edge.id,
-                edge.startVertexId,
-                edge.endVertexId,
-                edge.length))
 
     # Calculate rotations from the Vertex connections, and create a Dot with Cutouts.
     def constructDots(self):
@@ -166,14 +156,7 @@ class Exporter:
                 rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, negatedNormal)
                 rotationNormalToYaxis = rotationYaxisToNormal.inverse()
 
-                cutout = Cutout(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
-
-                print("   - Cutout for vertex {0}, shape {1}".format(vertex.id, cutout.shape))
-                print("   -    found edge {0} connected vertex {2} to vertex: {1}".format(connection[0], connection[1], vertex.id))
-                print("   -    and the direction of the edge is ({0},{1},{2})".format(
-                    directionOfEdge.x,
-                    directionOfEdge.y,
-                    directionOfEdge.z))
+                cutout = Cutout(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis, connection[0])
 
                 dot.addCutout(cutout)
 
@@ -202,8 +185,6 @@ class Exporter:
         # rename the cutout.
 
         for dot in self.dots:
-            print('adding dot {0}'.format(dot.name()))
-
             # Copy sphere object from the template object.
             newDot = cmds.duplicate(self.getTemplateObjectName("sphere_000"))[0]
 
@@ -239,6 +220,20 @@ class Exporter:
         mfnTransform = OpenMaya.MFnTransform(dotDagPath)
         mfnTransform.setTranslation(OpenMaya.MVector(xPosition, 0.0, zPosition), OpenMaya.MSpace.kTransform)
 
+    def printStickInformation(self):
+        print("\n ---- Stick Information ---- \n")
+
+        for edge in self.edges:
+            startDot = self.findDot(edge.startVertexId)
+            endDot = self.findDot(edge.endVertexId)
+            print("Stick {0} connects dot_{1} {2} hole to dot_{3} {4} hole and has length {5}".format(
+                edge.id,
+                startDot.name(),
+                startDot.findCutout(edge.id).name,
+                endDot.name(),
+                endDot.findCutout(edge.id).name,
+                edge.length))
+
     def export(self, outputFile):
 
         cmds.file(rename=outputFile)
@@ -268,6 +263,9 @@ class Exporter:
             dagIterator.next()
 
         self.constructDots()
+
+        self.printStickInformation()
+
         self.insertDots()
 
         fileName, fileExtension = os.path.splitext(outputFile)
