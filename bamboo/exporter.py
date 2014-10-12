@@ -284,7 +284,7 @@ class Exporter:
         cmds.file(save=True, type=fileType)
 
 # Run the exporter in console mode, good for testing.
-# /Applications/Autodesk/maya2015/Maya.app/Contents/bin/mayapy "/Users/noin/work/bamboo-workshop/bamboo/exporter.py" "/Users/noin/Dropbox/Share/Bamboo Workshop/Noins testing Sandbox/TestTriangle.ma" "/Users/noin/Desktop/output.ma"
+# /Applications/Autodesk/maya2015/Maya.app/Contents/bin/mayapy "~/work/bamboo-workshop/bamboo/exporter.py" "~/Dropbox/Share/Bamboo Workshop/Noins testing Sandbox/TestTriangle.ma" "~/Desktop/output.ma"
 def main(argv):
 
     print("running bamboo exporter in console mode")
