@@ -210,7 +210,7 @@ class Exporter:
             for cutout in dot.cutouts:
 
                 # Copy cutout object from the template object, and rotate it.
-                newCutout = cmds.duplicate(self.getTemplateObjectName("square"))[0]
+                newCutout = cmds.duplicate(self.getTemplateObjectName(cutout.shape))[0]
                 cutoutDagPath = self.getDagPathFromPath(newCutout)
                 mfnTransform = OpenMaya.MFnTransform(cutoutDagPath)
 
