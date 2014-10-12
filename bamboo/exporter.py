@@ -6,7 +6,7 @@ import maya.standalone
 import os
 import sys
 
-# Maya Edge model class, that will be converted into a rod.
+# Maya Edge model class, that will be converted into a Stick.
 class Edge:
 
     def __init__(self, id, startVertexId, endVertexId, length):
@@ -16,7 +16,7 @@ class Edge:
         self.connectedVertices = [self.startVertexId, self.endVertexId]
         self.length = length
 
-# Maya Vertex model class, that will be converted into a Joint.
+# Maya Vertex model class, that will be converted into a Dot.
 class Vertex:
 
     def __init__(self, id, position, normal, connectedEdges):
@@ -28,30 +28,27 @@ class Vertex:
     def negatedNormal(self):
         return -self.normal
 
-# A Vertex-based class with detailed plug information.
-class Joint:
-
-    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+# A Vertex-based class with detailed cutout information.
+class Dot:
 
     def __init__(self, id):
-        # the corresponding vertex that this joint was constructed from.
+        # the corresponding vertex that this dot was constructed from.
         self.vertexId = id
-        self.plugs = []
+        self.cutouts = []
 
-    def addPlug(self, plug):
-        self.plugs.append(plug)
+    def addCutout(self, cutout):
+        self.cutouts.append(cutout)
 
     def name(self):
-        return self.alphabet[self.vertexId]
+        return "%03d" % self.vertexId
 
-# A Plug represents a single socket on a Joint. It can accomodate an edge.
-class Plug:
+# A Cutout represents a single socket on a Dot. It can accomodate a Stick.
+class Cutout:
 
-    shapeMap = ['circle', 'triangle', 'square', 'pentagon', 'hexagon']
+    shapeMap = ['cutoutTriangle', 'cutoutSquare', 'cutoutPentagon', 'cutoutCircle']
 
     def __init__(self, shapeId, rotation):
-        # the unique shape that identifies the plug.
+        # the unique shape that identifies the cutout.
         self.shape = self.shapeMap[shapeId]
         # the angle of rotation is the transformation from the yAxis to the angle of the edge.
         self.rotation = rotation
@@ -62,12 +59,12 @@ class Exporter:
     version = 'v1'
 
     def __init__(self, gridSpacing, gridWidth, createInstructions):
-        self.jointGridSpacing = gridSpacing
-        self.jointGridWidth = gridWidth
+        self.dotGridSpacing = gridSpacing
+        self.dotGridWidth = gridWidth
         self.createInstructions = createInstructions
         self.edges = []
         self.vertices = []
-        self.joints = []
+        self.dots = []
 
     # Find a Vertex instance from its id.
     def findVertex(self, id):
@@ -146,12 +143,12 @@ class Exporter:
                 edge.endVertexId,
                 edge.length))
 
-    # Calculate rotations from the Vertex connections, and create a Joint with Plugs.
-    def constructJoints(self):
+    # Calculate rotations from the Vertex connections, and create a Dot with Cutouts.
+    def constructDots(self):
 
         for vertex in self.vertices:
-            # Create the Joint object.
-            joint = Joint(vertex.id)
+            # Create the Dot object.
+            dot = Dot(vertex.id)
             negatedNormal = vertex.negatedNormal()
             position = OpenMaya.MVector(vertex.position)
 
@@ -169,18 +166,18 @@ class Exporter:
                 rotationYaxisToNormal = OpenMaya.MQuaternion(OpenMaya.MVector.yAxis, negatedNormal)
                 rotationNormalToYaxis = rotationYaxisToNormal.inverse()
 
-                plug = Plug(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
+                cutout = Cutout(i, rotationYaxisToNormal * rotationNormalToEdge * rotationNormalToYaxis)
 
-                print("   - Plug for vertex {0}, shape {1}".format(vertex.id, plug.shape))
+                print("   - Cutout for vertex {0}, shape {1}".format(vertex.id, cutout.shape))
                 print("   -    found edge {0} connected vertex {2} to vertex: {1}".format(connection[0], connection[1], vertex.id))
                 print("   -    and the direction of the edge is ({0},{1},{2})".format(
                     directionOfEdge.x,
                     directionOfEdge.y,
                     directionOfEdge.z))
 
-                joint.addPlug(plug)
+                dot.addCutout(cutout)
 
-            self.joints.append(joint)
+            self.dots.append(dot)
 
     # Takes a string path and returns an equivalent MDagPath.
     def getDagPathFromPath(self, path):
@@ -190,57 +187,56 @@ class Exporter:
         selectionList.getDagPath(0, dagPath)
         return dagPath
 
-    # Takes a string template object name (eg. joint) and returns the object name.
+    # Takes a string template object name (eg. cutoutTriangle) and returns the object name.
     def getTemplateObjectName(self, objectName):
         return "template_{0}_:{1}".format(self.version, objectName)
 
-    # Add a joint into the scene.
-    def insertJoints(self):
+    # Add a Dot into the scene.
+    def insertDots(self):
 
-        # copy joint object
-        # copy plug object
+        # copy dot object
+        # copy cutout object
         # run mesh difference
         # delete the layers
         # delete the groups
         # rename the cutout.
 
-        for joint in self.joints:
-            print('adding joint {0} (letter {1})'.format(joint.vertexId, joint.name()))
+        for dot in self.dots:
+            print('adding dot {0}'.format(dot.name()))
 
-            # Copy joint object from the template object.
-            newJoint = cmds.duplicate(self.getTemplateObjectName("joint"))[0]
+            # Copy sphere object from the template object.
+            newDot = cmds.duplicate(self.getTemplateObjectName("sphere_000"))[0]
 
-            for plug in joint.plugs:
+            for cutout in dot.cutouts:
 
-                # Copy plug object from the template object, and rotate it.
-                newPlug = cmds.duplicate(self.getTemplateObjectName("square"))[0]
-                plugDagPath = self.getDagPathFromPath(newPlug)
-                mfnTransform = OpenMaya.MFnTransform(plugDagPath)
+                # Copy cutout object from the template object, and rotate it.
+                newCutout = cmds.duplicate(self.getTemplateObjectName("square"))[0]
+                cutoutDagPath = self.getDagPathFromPath(newCutout)
+                mfnTransform = OpenMaya.MFnTransform(cutoutDagPath)
 
-                mfnTransform.rotateBy(plug.rotation, OpenMaya.MSpace.kTransform)
+                mfnTransform.rotateBy(cutout.rotation, OpenMaya.MSpace.kTransform)
 
                 # Mesh boolean combine, with 'difference' operator.
-                boolOp = cmds.polyBoolOp(newJoint, newPlug, op=2)
+                boolOp = cmds.polyBoolOp(newDot, newCutout, op=2)
 
-                # Update the joint copy name and remove history.
-                newJoint = boolOp[0]
-                cmds.delete(newJoint, constructionHistory=True)
+                # Update the dot copy name and remove history.
+                newDot = boolOp[0]
+                cmds.delete(newDot, constructionHistory=True)
 
+            dotPath = "dot_{0}".format(dot.name())
+            cmds.rename(newDot, dotPath)
 
-            jointPath = "joint_{0}_{1}".format(joint.name(), joint.vertexId)
-            cmds.rename(newJoint, jointPath)
+            # Move the new dot onto the final grid for printing.
+            self.positionDot(dotPath, dot.vertexId)
 
-            # Move the new joint onto the final grid for printing.
-            self.positionJoint(jointPath, joint.vertexId)
+    def positionDot(self, dotPath, vertexId):
+        # Given the vertex id and the num vertex id, work out the world position of the dot.
 
-    def positionJoint(self, jointPath, vertexId):
-        # Given the vertex id and the num vertex id, work out the world position of the joint.
+        xPosition = (vertexId % self.dotGridWidth) * self.dotGridSpacing
+        zPosition = (vertexId // self.dotGridWidth) * self.dotGridSpacing
 
-        xPosition = (vertexId % self.jointGridWidth) * self.jointGridSpacing
-        zPosition = (vertexId // self.jointGridWidth) * self.jointGridSpacing
-
-        jointDagPath = self.getDagPathFromPath(jointPath)
-        mfnTransform = OpenMaya.MFnTransform(jointDagPath)
+        dotDagPath = self.getDagPathFromPath(dotPath)
+        mfnTransform = OpenMaya.MFnTransform(dotDagPath)
         mfnTransform.setTranslation(OpenMaya.MVector(xPosition, 0.0, zPosition), OpenMaya.MSpace.kTransform)
 
     def export(self, outputFile):
@@ -271,8 +267,8 @@ class Exporter:
 
             dagIterator.next()
 
-        self.constructJoints()
-        self.insertJoints()
+        self.constructDots()
+        self.insertDots()
 
         fileName, fileExtension = os.path.splitext(outputFile)
         fileType = ""
