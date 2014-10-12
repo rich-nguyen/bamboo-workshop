@@ -19,6 +19,15 @@ Running the Exporter
 3. Add the templates scene as a reference node using the Maya Reference Editor.
 4. Export the scene by clicking Maya->(Bamboo Tools) Export...
 
+Terminology
+-----------
+ - A Maya edge is converted into a Stick. Sticks are made from bamboo.
+ - A Maya vertex is converted into a Dot. Dots are made from PLA plastic.
+ - A Dot is made from subtracting one or more Cutouts from a Sphere. A Dot contains a corresponding numerical label (formatted 'dot_XXX').
+ - A Cutout is a Maya mesh that is used to subtract a hole from a Sphere.
+ - A Sphere is a Maya mesh with a numerical label (formatted 'sphere_XXX').
+ - A Sculpture is a Maya mesh which will be converted into Dots and Sticks.
+
 Mesh limitations
 ----------------
  - 25 vertices in the shape. Don't think we can fit anymore on our 3D printer without pagination.
