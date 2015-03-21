@@ -46,7 +46,7 @@ class Dot:
         return [cutout for cutout in self.cutouts if cutout.edgeId == edgeId].pop()
 
     def sphereTemplateName(self):
-        return "sphere_{0}".format(self.name)
+        return "sphere_{0}".format(self.name())
 
 
 # A Cutout represents a single socket on a Dot. It can accomodate a Stick.
