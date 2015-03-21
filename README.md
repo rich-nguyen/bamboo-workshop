@@ -44,3 +44,4 @@ Things To Do
 - [x] Create the instructions file which will contain the rod lengths and connections.
 - [ ] Add error checking.
 - [ ] Export to stl.
+- [ ] Investigate ways of limiting the number of edges per vertex. Possibly use existing tools/ LOD algorithms?
