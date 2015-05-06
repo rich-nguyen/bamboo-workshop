@@ -16,6 +16,10 @@ class Edge:
         self.connectedVertices = [self.startVertexId, self.endVertexId]
         self.length = length
 
+    def name(self):
+        # Use a 1-based naming convention.
+        return "%03d" % (self.id + 1)
+
 # Maya Vertex model class, that will be converted into a Dot.
 class Vertex:
 
@@ -40,7 +44,8 @@ class Dot:
         self.cutouts.append(cutout)
 
     def name(self):
-        return "%03d" % self.vertexId
+        # Use a 1-based naming convention.
+        return "%03d" % (self.vertexId + 1)
 
     def findCutout(self, edgeId):
         return [cutout for cutout in self.cutouts if cutout.edgeId == edgeId].pop()
@@ -230,7 +235,7 @@ class Exporter:
             startDot = self.findDot(edge.startVertexId)
             endDot = self.findDot(edge.endVertexId)
             print("Stick {0} connects dot_{1} {2} hole to dot_{3} {4} hole and has length {5}".format(
-                edge.id,
+                edge.name(),
                 startDot.name(),
                 startDot.findCutout(edge.id).name,
                 endDot.name(),
