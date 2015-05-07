@@ -242,6 +242,23 @@ class Exporter:
                 endDot.findCutout(edge.id).name,
                 edge.length))
 
+    # Check that the dots collected from the DAG are likely to work as a dot to dot output.
+    def validateDots(self):
+
+        maxShapes = len(Cutout.shapeMap)
+
+        for vertex in self.vertices:
+
+            # A vertex cannot have more edges than the shape cutout map.
+            if len(vertex.connectedEdges) > maxShapes:
+                raise Exception("""
+
+Vertex {0} has more than {1} connections.
+Use Display -> Polygons -> Component IDs -> Vertices to see the vertex IDs.
+
+                                """.format(vertex.id, maxShapes))
+
+
     def export(self, outputFile):
 
         cmds.file(rename=outputFile)
@@ -269,6 +286,8 @@ class Exporter:
                 break
 
             dagIterator.next()
+
+        self.validateDots()
 
         self.constructDots()
 
